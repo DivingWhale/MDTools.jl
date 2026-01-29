@@ -4,16 +4,16 @@ using MDTools
 using Printf
 
 function run_benchmark()
-    println("=== XTCReader.jl 性能基准测试 ===\n")
+    println("=== XTCReader.jl Performance Benchmark ===\n")
 
-    # 预热
-    println("预热中...")
+    # Warm-up
+    println("Warming up...")
     for frame in eachframe("test.xtc")
         break
     end
 
-    # 测试 eachframe 迭代器（零分配版本）
-    println("\n测试 eachframe 迭代器...")
+    # Test eachframe iterator (zero-allocation version)
+    println("\nTesting eachframe iterator...")
     start_time = time()
     count = 0
     for frame in eachframe("test.xtc")
@@ -22,16 +22,16 @@ function run_benchmark()
     end_time = time()
 
     duration = end_time - start_time
-    @printf("XTCReader.jl (eachframe) 耗时: %.4f 秒\n", duration)
-    @printf("帧率 (FPS): %.2f\n", count / duration)
-    println("总帧数: $count")
+    @printf("XTCReader.jl (eachframe) time: %.4f seconds\n", duration)
+    @printf("Frame rate (FPS): %.2f\n", count / duration)
+    println("Total frames: $count")
 
-    # 获取原子数
+    # Get number of atoms
     traj = read_xtc("test.xtc")
-    println("原子数: $(traj.natoms)")
+    println("Number of atoms: $(traj.natoms)")
 
-    # 再运行一次取平均
-    println("\n第二次运行...")
+    # Run again to get average
+    println("\nSecond run...")
     start_time = time()
     count = 0
     for frame in eachframe("test.xtc")
@@ -40,12 +40,12 @@ function run_benchmark()
     end_time = time()
 
     duration2 = end_time - start_time
-    @printf("XTCReader.jl (eachframe) 耗时: %.4f 秒\n", duration2)
-    @printf("帧率 (FPS): %.2f\n", count / duration2)
+    @printf("XTCReader.jl (eachframe) time: %.4f seconds\n", duration2)
+    @printf("Frame rate (FPS): %.2f\n", count / duration2)
 
     avg_duration = (duration + duration2) / 2
-    @printf("\n平均耗时: %.4f 秒\n", avg_duration)
-    @printf("平均帧率: %.2f FPS\n", count / avg_duration)
+    @printf("\nAverage time: %.4f seconds\n", avg_duration)
+    @printf("Average frame rate: %.2f FPS\n", count / avg_duration)
 end
 
 run_benchmark()

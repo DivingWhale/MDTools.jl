@@ -1,28 +1,28 @@
-# 原子选择器
+# Atom selectors
 
-# 常见氨基酸残基名
+# Common amino acid residue names
 const PROTEIN_RESNAMES = Set([
     "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE",
     "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL",
-    # 带电/修饰形式
+    # Charged/modified forms
     "HIE", "HID", "HIP", "CYX", "ASH", "GLH", "LYN",
-    # N/C 端修饰
+    # N/C terminal modifications
     "NALA", "NARG", "NASN", "NASP", "NCYS", "NGLN", "NGLU", "NGLY", "NHIS", "NILE",
     "NLEU", "NLYS", "NMET", "NPHE", "NPRO", "NSER", "NTHR", "NTRP", "NTYR", "NVAL",
     "CALA", "CARG", "CASN", "CASP", "CCYS", "CGLN", "CGLU", "CGLY", "CHIS", "CILE",
     "CLEU", "CLYS", "CMET", "CPHE", "CPRO", "CSER", "CTHR", "CTRP", "CTYR", "CVAL"
 ])
 
-# 常见水分子残基名
+# Common water molecule residue names
 const WATER_RESNAMES = Set(["SOL", "WAT", "HOH", "TIP3", "TIP4", "TIP5", "SPC", "SPCE", "OPC"])
 
-# 常见离子残基名
+# Common ion residue names
 const ION_RESNAMES = Set(["NA", "CL", "K", "MG", "CA", "ZN", "FE", "NA+", "CL-", "K+", "MG2+", "CA2+"])
 
-# 骨架原子名
+# Backbone atom names
 const BACKBONE_NAMES = Set(["N", "CA", "C", "O", "H", "HA", "OC1", "OC2", "OXT"])
 
-# 氢原子名（通常以 H 开头）
+# Hydrogen atom names (usually start with H)
 function is_hydrogen(name::String)::Bool
     return length(name) > 0 && name[1] == 'H'
 end
@@ -35,7 +35,7 @@ end
     select_by_name(top::Topology, names::Vector{String}) -> Vector{Int}
     select_by_name(top::Topology, name::String) -> Vector{Int}
 
-按原子名选择原子，返回原子索引列表。
+Select atoms by atom name, returns a list of atom indices.
 
 # Example
 ```julia
@@ -59,7 +59,7 @@ select_by_name(top::Topology, name::String) = select_by_name(top, [name])
     select_by_resname(top::Topology, resnames::Vector{String}) -> Vector{Int}
     select_by_resname(top::Topology, resname::String) -> Vector{Int}
 
-按残基名选择原子，返回原子索引列表。
+Select atoms by residue name, returns a list of atom indices.
 
 # Example
 ```julia
@@ -84,12 +84,12 @@ select_by_resname(top::Topology, resname::String) = select_by_resname(top, [resn
     select_by_resid(top::Topology, resid::Int) -> Vector{Int}
     select_by_resid(top::Topology, start::Int, stop::Int) -> Vector{Int}
 
-按残基号选择原子，返回原子索引列表。
+Select atoms by residue number, returns a list of atom indices.
 
 # Example
 ```julia
 res1 = select_by_resid(top, 1)
-res_range = select_by_resid(top, 10, 20)  # 残基 10-20
+res_range = select_by_resid(top, 10, 20)  # residues 10-20
 ```
 """
 function select_by_resid(top::Topology, resids::Vector{Int})::Vector{Int}
@@ -111,7 +111,7 @@ end
 """
     select_by_index(top::Topology, start::Int, stop::Int) -> Vector{Int}
 
-按原子索引范围选择原子。
+Select atoms by atom index range.
 
 # Example
 ```julia
@@ -129,7 +129,7 @@ end
 """
     select_and(indices1::Vector{Int}, indices2::Vector{Int}) -> Vector{Int}
 
-返回两个选择的交集。
+Returns the intersection of two selections.
 
 # Example
 ```julia
@@ -143,7 +143,7 @@ end
 """
     select_or(indices1::Vector{Int}, indices2::Vector{Int}) -> Vector{Int}
 
-返回两个选择的并集。
+Returns the union of two selections.
 
 # Example
 ```julia
@@ -157,7 +157,7 @@ end
 """
     select_not(top::Topology, indices::Vector{Int}) -> Vector{Int}
 
-返回选择的补集（不在给定索引中的所有原子）。
+Returns the complement of a selection (all atoms not in the given indices).
 
 # Example
 ```julia
@@ -176,7 +176,7 @@ end
 """
     select_all(top::Topology) -> Vector{Int}
 
-选择所有原子。
+Selects all atoms.
 """
 function select_all(top::Topology)::Vector{Int}
     return collect(1:top.natoms)
@@ -185,7 +185,7 @@ end
 """
     select_protein(top::Topology) -> Vector{Int}
 
-选择蛋白质原子（基于常见氨基酸残基名）。
+Selects protein atoms (based on common amino acid residue names).
 """
 function select_protein(top::Topology)::Vector{Int}
     indices = Int[]
@@ -200,7 +200,7 @@ end
 """
     select_backbone(top::Topology) -> Vector{Int}
 
-选择蛋白质骨架原子 (N, CA, C, O)。
+Selects protein backbone atoms (N, CA, C, O).
 """
 function select_backbone(top::Topology)::Vector{Int}
     protein_indices = Set(select_protein(top))
@@ -222,7 +222,7 @@ end
 """
     select_sidechain(top::Topology) -> Vector{Int}
 
-选择蛋白质侧链原子（不包含骨架原子）。
+Selects protein sidechain atoms (excluding backbone atoms).
 """
 function select_sidechain(top::Topology)::Vector{Int}
     protein = select_protein(top)
@@ -233,7 +233,7 @@ end
 """
     select_water(top::Topology) -> Vector{Int}
 
-选择水分子原子。
+Selects water molecule atoms.
 """
 function select_water(top::Topology)::Vector{Int}
     indices = Int[]
@@ -248,7 +248,7 @@ end
 """
     select_ions(top::Topology) -> Vector{Int}
 
-选择离子原子。
+Selects ion atoms.
 """
 function select_ions(top::Topology)::Vector{Int}
     indices = Int[]
@@ -263,7 +263,7 @@ end
 """
     select_hydrogen(top::Topology) -> Vector{Int}
 
-选择氢原子（原子名以 H 开头）。
+Selects hydrogen atoms (atom names starting with H).
 """
 function select_hydrogen(top::Topology)::Vector{Int}
     indices = Int[]
@@ -278,7 +278,7 @@ end
 """
     select_heavy(top::Topology) -> Vector{Int}
 
-选择重原子（非氢原子）。
+Selects heavy atoms (non-hydrogen atoms).
 """
 function select_heavy(top::Topology)::Vector{Int}
     return select_not(top, select_hydrogen(top))
@@ -291,7 +291,7 @@ end
 """
     get_atoms(top::Topology, indices::Vector{Int}) -> Vector{Atom}
 
-根据索引获取原子列表。
+Gets a list of atoms by indices.
 """
 function get_atoms(top::Topology, indices::Vector{Int})::Vector{Atom}
     return [top.atoms[i] for i in indices if 1 <= i <= top.natoms]
@@ -300,9 +300,9 @@ end
 """
     get_coords(frame::XTCFrame, indices::Vector{Int}) -> Matrix{Float32}
 
-从帧中提取选定原子的坐标。
+Extracts coordinates of selected atoms from a frame.
 
-返回 3 x n 矩阵，其中 n 是选定原子数。
+Returns a 3 x n matrix where n is the number of selected atoms.
 """
 function get_coords(frame::XTCFrame, indices::Vector{Int})::Matrix{Float32}
     return frame.coords[:, indices]
@@ -311,7 +311,7 @@ end
 """
     get_coords(u::Universe, frame_idx::Int, indices::Vector{Int}) -> Matrix{Float32}
 
-从 Universe 的指定帧中提取选定原子的坐标。
+Extracts coordinates of selected atoms from a specified frame in a Universe.
 """
 function get_coords(u::Universe, frame_idx::Int, indices::Vector{Int})::Matrix{Float32}
     return u.trajectory.frames[frame_idx].coords[:, indices]
@@ -329,7 +329,7 @@ end
 """
     residue_names(top::Topology) -> Vector{String}
 
-获取所有残基名的列表。
+Gets a list of all residue names.
 """
 function residue_names(top::Topology)::Vector{String}
     return collect(keys(top.residue_names))
@@ -338,7 +338,7 @@ end
 """
     atom_names(top::Topology) -> Vector{String}
 
-获取所有原子名的列表。
+Gets a list of all atom names.
 """
 function atom_names(top::Topology)::Vector{String}
     return collect(keys(top.atom_names))

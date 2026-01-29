@@ -1,5 +1,5 @@
-# 拓扑数据结构和 GRO 文件读取
-# 合并自: topology.jl, gro.jl
+# Topology data structure and GRO file reading
+# Merged from: topology.jl, gro.jl
 
 # =============================================================================
 # 数据类型
@@ -8,16 +8,16 @@
 """
     Atom
 
-表示单个原子的拓扑信息。
+Represents topological information for a single atom.
 
-# 字段
-- `index::Int`: 原子索引 (1-based)
-- `name::String`: 原子名称，如 "CA", "N", "O"
-- `resname::String`: 残基名称，如 "GLY", "ALA"
-- `resid::Int`: 残基编号
-- `x::Float32`: 初始 x 坐标 (nm)
-- `y::Float32`: 初始 y 坐标 (nm)
-- `z::Float32`: 初始 z 坐标 (nm)
+# Fields
+- `index::Int`: Atom index (1-based)
+- `name::String`: Atom name, e.g., "CA", "N", "O"
+- `resname::String`: Residue name, e.g., "GLY", "ALA"
+- `resid::Int`: Residue number
+- `x::Float32`: Initial x coordinate (nm)
+- `y::Float32`: Initial y coordinate (nm)
+- `z::Float32`: Initial z coordinate (nm)
 """
 struct Atom
     index::Int
@@ -32,16 +32,16 @@ end
 """
     Topology
 
-分子拓扑结构，包含所有原子的信息和快速查找索引。
+Molecular topology structure containing information for all atoms and fast lookup indices.
 
-# 字段
-- `natoms::Int`: 原子总数
-- `atoms::Vector{Atom}`: 原子列表
-- `title::String`: 拓扑标题
-- `box::Vector{Float32}`: 盒子尺寸 [x, y, z]
-- `atom_names::Dict{String, Vector{Int}}`: 原子名 -> 原子索引列表
-- `residue_names::Dict{String, Vector{Int}}`: 残基名 -> 原子索引列表
-- `residue_ids::Dict{Int, Vector{Int}}`: 残基号 -> 原子索引列表
+# Fields
+- `natoms::Int`: Total number of atoms
+- `atoms::Vector{Atom}`: List of atoms
+- `title::String`: Topology title
+- `box::Vector{Float32}`: Box dimensions [x, y, z]
+- `atom_names::Dict{String, Vector{Int}}`: Atom name -> list of atom indices
+- `residue_names::Dict{String, Vector{Int}}`: Residue name -> list of atom indices
+- `residue_ids::Dict{Int, Vector{Int}}`: Residue number -> list of atom indices
 """
 struct Topology
     natoms::Int
@@ -82,11 +82,11 @@ end
 """
     Universe
 
-结合拓扑和轨迹的分析单元。
+Analysis unit combining topology and trajectory.
 
-# 字段
-- `topology::Topology`: 拓扑结构
-- `trajectory::XTCTrajectory`: 轨迹数据
+# Fields
+- `topology::Topology`: Topology structure
+- `trajectory::XTCTrajectory`: Trajectory data
 """
 struct Universe
     topology::Topology
@@ -116,13 +116,13 @@ end
 """
     read_gro(filename::String) -> Topology
 
-读取 GROMACS GRO 格式的结构文件，返回拓扑对象。
+Reads a GROMACS GRO format structure file and returns a topology object.
 
-# GRO 格式
-- 第1行: 标题
-- 第2行: 原子数
-- 原子行: 残基号(5), 残基名(5), 原子名(5), 原子号(5), x, y, z
-- 最后一行: 盒子矢量
+# GRO Format
+- Line 1: Title
+- Line 2: Number of atoms
+- Atom lines: residue number (5), residue name (5), atom name (5), atom number (5), x, y, z
+- Last line: Box vector
 
 # Example
 ```julia

@@ -1,18 +1,18 @@
-# XTC 轨迹文件读取模块
-# 合并自: types.jl, xdr.jl, bitbuffer.jl, compression.jl, reader.jl
+# XTC trajectory file reading module
+# Merged from: types.jl, xdr.jl, bitbuffer.jl, compression.jl, reader.jl
 
 # =============================================================================
 # 常量定义
 # =============================================================================
 
-# XTC 魔数常量
+# XTC magic number constants
 const XTC_MAGIC = Int32(1995)
 const XTC_NEW_MAGIC = Int32(2023)
 
-# 相当于 GROMACS 代码中约 ~300M 原子的限制
+# Equivalent to ~300M atom limit in GROMACS code
 const XTC_1995_MAX_NATOMS = 298261617
 
-# Magic integers 表，用于自适应位宽编码
+# Magic integers table for adaptive bit-width encoding
 const MAGICINTS = Int32[
     0, 0, 0, 0, 0, 0, 0, 0, 0, 8,
     10, 12, 16, 20, 25, 32, 40, 50, 64, 80,
@@ -24,7 +24,7 @@ const MAGICINTS = Int32[
     10568983, 13316085, 16777216
 ]
 
-# Julia 1-indexed，对应 C 代码的 FIRSTIDX = 9
+# Julia 1-indexed, corresponding to FIRSTIDX = 9 in C code
 const FIRSTIDX = 10
 const LASTIDX = length(MAGICINTS)
 
@@ -35,15 +35,15 @@ const LASTIDX = length(MAGICINTS)
 """
     XTCFrame
 
-表示 XTC 轨迹文件中的单个帧。
+Represents a single frame in an XTC trajectory file.
 
-# 字段
-- `step::Int64`: 帧编号（模拟步数）
-- `time::Float32`: 模拟时间（单位：ps）
-- `box::Matrix{Float32}`: 3×3 盒子矩阵（单位：nm）
-- `natoms::Int32`: 原子数量
-- `precision::Float32`: 坐标精度
-- `coords::Matrix{Float32}`: 3×natoms 坐标矩阵（单位：nm）
+# Fields
+- `step::Int64`: Frame number (simulation step)
+- `time::Float32`: Simulation time (ps)
+- `box::Matrix{Float32}`: 3×3 box matrix (nm)
+- `natoms::Int32`: Number of atoms
+- `precision::Float32`: Coordinate precision
+- `coords::Matrix{Float32}`: 3×natoms coordinate matrix (nm)
 """
 struct XTCFrame
     step::Int64
@@ -57,7 +57,7 @@ end
 """
     MutableXTCFrame
 
-可变版本的 XTCFrame，用于迭代器复用以避免内存分配。
+Mutable version of XTCFrame for iterator reuse to avoid memory allocation.
 """
 mutable struct MutableXTCFrame
     step::Int64
@@ -78,13 +78,13 @@ end
 """
     XTCTrajectory
 
-表示完整的 XTC 轨迹文件。
+Represents a complete XTC trajectory file.
 
-# 字段
-- `filename::String`: 文件路径
-- `natoms::Int32`: 原子数量
-- `nframes::Int`: 帧数
-- `frames::Vector{XTCFrame}`: 所有帧
+# Fields
+- `filename::String`: File path
+- `natoms::Int32`: Number of atoms
+- `nframes::Int`: Number of frames
+- `frames::Vector{XTCFrame}`: All frames
 """
 struct XTCTrajectory
     filename::String
@@ -96,7 +96,7 @@ end
 """
     XTCBuffer
 
-预分配的缓冲区，用于解压缩过程中避免重复内存分配。
+Pre-allocated buffer to avoid repeated memory allocation during decompression.
 """
 mutable struct XTCBuffer
     compressed::Vector{UInt8}
@@ -254,7 +254,7 @@ function decompress_coords!(io::IO, natoms::Int32, magic::Int32,
         @warn "Atom count mismatch: expected $natoms, got $lsize"
     end
 
-    # 小系统不使用压缩
+    # Small systems don't use compression
     if lsize <= 9
         @inbounds for i in 1:lsize
             for j in 1:3
@@ -483,7 +483,7 @@ end
 """
     read_xtc(filename::String) -> XTCTrajectory
 
-读取完整的 XTC 轨迹文件。
+Reads a complete XTC trajectory file.
 
 # Example
 ```julia
@@ -512,7 +512,7 @@ end
 """
     eachframe(filename::String)
 
-返回一个迭代器，逐帧读取 XTC 文件。复用帧对象以避免内存分配。
+Returns an iterator to read XTC file frame by frame. Reuses frame objects to avoid memory allocation.
 
 # Example
 ```julia
