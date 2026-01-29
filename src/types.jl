@@ -23,6 +23,31 @@ struct XTCFrame
 end
 
 """
+    MutableXTCFrame
+
+可变版本的 XTCFrame，用于迭代器复用以避免内存分配。
+"""
+mutable struct MutableXTCFrame
+    step::Int64
+    time::Float32
+    box::Matrix{Float32}
+    natoms::Int32
+    precision::Float32
+    coords::Matrix{Float32}
+end
+
+function MutableXTCFrame(natoms::Integer)
+    return MutableXTCFrame(
+        Int64(0),
+        Float32(0),
+        Matrix{Float32}(undef, 3, 3),
+        Int32(natoms),
+        Float32(0),
+        Matrix{Float32}(undef, 3, Int(natoms))
+    )
+end
+
+"""
     XTCTrajectory
 
 表示完整的 XTC 轨迹文件。
@@ -38,6 +63,46 @@ struct XTCTrajectory
     natoms::Int32
     nframes::Int
     frames::Vector{XTCFrame}
+end
+
+"""
+    XTCBuffer
+
+预分配的缓冲区，用于解压缩过程中避免重复内存分配。
+"""
+mutable struct XTCBuffer
+    # 压缩数据缓冲区
+    compressed::Vector{UInt8}
+    compressed_capacity::Int
+
+    # 临时整数数组
+    minint::Vector{Int32}
+    maxint::Vector{Int32}
+    sizeint::Vector{Int}
+    bitsizeint::Vector{Int}
+    sizesmall::Vector{Int}
+
+    # 坐标临时缓冲区
+    thiscoord::Vector{Int}
+    prevcoord::Vector{Int}
+
+    # receiveints 专用缓冲区
+    ri_bytes::Vector{Int}
+end
+
+function XTCBuffer(max_compressed_size::Int=1024 * 1024)
+    return XTCBuffer(
+        Vector{UInt8}(undef, max_compressed_size),
+        max_compressed_size,
+        zeros(Int32, 3),
+        zeros(Int32, 3),
+        zeros(Int, 3),
+        zeros(Int, 3),
+        zeros(Int, 3),
+        zeros(Int, 3),
+        zeros(Int, 3),
+        zeros(Int, 32)
+    )
 end
 
 # XTC 魔数常量
