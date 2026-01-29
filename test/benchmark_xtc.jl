@@ -1,6 +1,6 @@
 using Pkg
 Pkg.activate(joinpath(@__DIR__, ".."))
-using XTCReader
+using MDTools
 using Printf
 
 function run_benchmark()

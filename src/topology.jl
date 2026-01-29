@@ -1,4 +1,9 @@
-# 拓扑数据结构
+# 拓扑数据结构和 GRO 文件读取
+# 合并自: topology.jl, gro.jl
+
+# =============================================================================
+# 数据类型
+# =============================================================================
 
 """
     Atom
@@ -48,33 +53,23 @@ struct Topology
     residue_ids::Dict{Int,Vector{Int}}
 end
 
-"""
-    Topology(atoms::Vector{Atom}, title::String, box::Vector{Float32}) -> Topology
-
-从原子列表构建拓扑结构，自动创建查找索引。
-"""
 function Topology(atoms::Vector{Atom}, title::AbstractString, box::Vector{Float32})
     natoms = length(atoms)
-
-    # 构建查找索引
     atom_names = Dict{String,Vector{Int}}()
     residue_names = Dict{String,Vector{Int}}()
     residue_ids = Dict{Int,Vector{Int}}()
 
     for atom in atoms
-        # 原子名索引
         if !haskey(atom_names, atom.name)
             atom_names[atom.name] = Int[]
         end
         push!(atom_names[atom.name], atom.index)
 
-        # 残基名索引
         if !haskey(residue_names, atom.resname)
             residue_names[atom.resname] = Int[]
         end
         push!(residue_names[atom.resname], atom.index)
 
-        # 残基号索引
         if !haskey(residue_ids, atom.resid)
             residue_ids[atom.resid] = Int[]
         end
@@ -87,7 +82,7 @@ end
 """
     Universe
 
-结合拓扑和轨迹的分析单元，类似于 MDAnalysis 的 Universe。
+结合拓扑和轨迹的分析单元。
 
 # 字段
 - `topology::Topology`: 拓扑结构
@@ -98,7 +93,10 @@ struct Universe
     trajectory::XTCTrajectory
 end
 
+# =============================================================================
 # 显示方法
+# =============================================================================
+
 function Base.show(io::IO, atom::Atom)
     print(io, "Atom($(atom.index), $(atom.name), $(atom.resname)$(atom.resid))")
 end
@@ -109,4 +107,66 @@ end
 
 function Base.show(io::IO, u::Universe)
     print(io, "Universe($(u.topology.natoms) atoms, $(u.trajectory.nframes) frames)")
+end
+
+# =============================================================================
+# GRO 文件读取
+# =============================================================================
+
+"""
+    read_gro(filename::String) -> Topology
+
+读取 GROMACS GRO 格式的结构文件，返回拓扑对象。
+
+# GRO 格式
+- 第1行: 标题
+- 第2行: 原子数
+- 原子行: 残基号(5), 残基名(5), 原子名(5), 原子号(5), x, y, z
+- 最后一行: 盒子矢量
+
+# Example
+```julia
+top = read_gro("structure.gro")
+println("Atoms: ", top.natoms)
+```
+"""
+function read_gro(filename::String)::Topology
+    atoms = Atom[]
+    title = ""
+    box = Float32[0.0, 0.0, 0.0]
+    natoms = 0
+
+    open(filename, "r") do io
+        title = strip(readline(io))
+        natoms_line = strip(readline(io))
+        natoms = parse(Int, natoms_line)
+        sizehint!(atoms, natoms)
+
+        for i in 1:natoms
+            line = readline(io)
+            atom = parse_gro_atom(line, i)
+            push!(atoms, atom)
+        end
+
+        box_line = strip(readline(io))
+        box_values = split(box_line)
+        if length(box_values) >= 3
+            box[1] = parse(Float32, box_values[1])
+            box[2] = parse(Float32, box_values[2])
+            box[3] = parse(Float32, box_values[3])
+        end
+    end
+
+    return Topology(atoms, title, box)
+end
+
+function parse_gro_atom(line::String, expected_index::Int)::Atom
+    resid_str = strip(line[1:5])
+    resid = parse(Int, resid_str)
+    resname = strip(line[6:min(10, length(line))])
+    atomname = strip(line[11:min(15, length(line))])
+    x = parse(Float32, strip(line[21:min(28, length(line))]))
+    y = parse(Float32, strip(line[29:min(36, length(line))]))
+    z = parse(Float32, strip(line[37:min(44, length(line))]))
+    return Atom(expected_index, atomname, resname, resid, x, y, z)
 end

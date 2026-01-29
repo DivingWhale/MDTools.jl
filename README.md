@@ -1,202 +1,116 @@
-# XTCReader.jl
+# MDTools.jl
 
-A Julia package for reading GROMACS XTC trajectory files and GRO structure files, with atom selection capabilities.
+Julia 分子动力学分析工具包，支持 GROMACS XTC 轨迹文件和 GRO 结构文件读取，以及原子选择功能。
 
-## Installation
+## 安装
 
 ```julia
 using Pkg
-Pkg.develop(path="/path/to/XTCReader.jl")
+Pkg.develop(path="/path/to/MDTools.jl")
 ```
 
-## Quick Start
+## 快速开始
 
 ```julia
-using XTCReader
+using MDTools
 
-# Read topology and trajectory
+# 读取拓扑和轨迹
 top = read_gro("structure.gro")
 traj = read_xtc("trajectory.xtc")
 
-# Create a Universe (combines topology and trajectory)
+# 创建 Universe
 u = Universe(top, traj)
 
-# Select atoms
+# 选择原子
 ca_atoms = select_by_name(top, "CA")
 backbone = select_backbone(top)
 protein = select_protein(top)
 
-# Extract coordinates for selected atoms
+# 提取坐标
 coords = get_coords(traj.frames[1], ca_atoms)
 ```
 
-## Reading XTC Trajectories
+## XTC 轨迹读取
 
-### Read entire trajectory
+### 读取完整轨迹
 
 ```julia
-using XTCReader
-
 traj = read_xtc("trajectory.xtc")
-
-println("Number of atoms: ", traj.natoms)
-println("Number of frames: ", traj.nframes)
-
-# Access first frame
-frame = traj.frames[1]
-println("Step: ", frame.step)
-println("Time: ", frame.time, " ps")
-println("Box: ", frame.box)
-println("Coordinates shape: ", size(frame.coords))  # (3, natoms)
+println("Frames: ", traj.nframes)
+println("Atoms: ", traj.natoms)
 ```
 
-### Iterate over frames (memory efficient)
+### 迭代帧（内存高效）
 
 ```julia
 for frame in eachframe("trajectory.xtc")
     println("Step: ", frame.step, " Time: ", frame.time, " ps")
-    # Process frame.coords...
 end
 ```
 
-## Reading GRO Files
+## GRO 文件读取
 
 ```julia
 top = read_gro("structure.gro")
-
-println("Number of atoms: ", top.natoms)
-println("Number of residues: ", length(residue_ids(top)))
-println("First atom: ", top.atoms[1])
+println("Atoms: ", top.natoms)
+println("Residues: ", length(residue_ids(top)))
 ```
 
-## Atom Selection
+## 原子选择
 
-### Basic Selection
+### 基本选择
 
 ```julia
-# By atom name
+# 按原子名
 ca = select_by_name(top, "CA")
 backbone_atoms = select_by_name(top, ["N", "CA", "C", "O"])
 
-# By residue name
+# 按残基名
 glycines = select_by_resname(top, "GLY")
-aromatics = select_by_resname(top, ["PHE", "TYR", "TRP"])
 
-# By residue ID
-res1 = select_by_resid(top, 1)
-res_range = select_by_resid(top, 10, 50)  # residues 10-50
-
-# By index range
-first_100 = select_by_index(top, 1, 100)
+# 按残基号
+res_range = select_by_resid(top, 10, 50)
 ```
 
-### Predefined Selectors
+### 预定义选择器
 
 ```julia
-select_all(top)        # All atoms
-select_protein(top)    # Protein atoms
-select_backbone(top)   # Backbone (N, CA, C, O)
-select_sidechain(top)  # Sidechain atoms
-select_water(top)      # Water molecules
-select_ions(top)       # Ions
-select_hydrogen(top)   # Hydrogen atoms
-select_heavy(top)      # Heavy (non-hydrogen) atoms
+select_all(top)        # 所有原子
+select_protein(top)    # 蛋白质原子
+select_backbone(top)   # 骨架原子
+select_sidechain(top)  # 侧链原子
+select_water(top)      # 水分子
+select_ions(top)       # 离子
+select_hydrogen(top)   # 氢原子
+select_heavy(top)      # 重原子
 ```
 
-### Combining Selections
+### 组合选择
 
 ```julia
-# AND (intersection)
+# AND (交集)
 ca_in_gly = select_and(select_by_name(top, "CA"), select_by_resname(top, "GLY"))
 
-# OR (union)
+# OR (并集)
 n_or_c = select_or(select_by_name(top, "N"), select_by_name(top, "C"))
 
-# NOT (complement)
+# NOT (补集)
 non_water = select_not(top, select_water(top))
 ```
 
-### Extracting Coordinates
+## 性能
 
-```julia
-# Get coordinates from a frame
-ca_atoms = select_by_name(top, "CA")
-coords = get_coords(frame, ca_atoms)  # Returns 3×n matrix
+使用零分配迭代器 `eachframe()`，读取速度约 **16,000+ FPS**（3726 原子），优于 MDAnalysis。
 
-# From Universe
-coords = get_coords(u, frame_idx, ca_atoms)
+## 代码结构
 
-# Get atom information
-atoms = get_atoms(top, ca_atoms)  # Returns Vector{Atom}
 ```
-
-## Data Structures
-
-### Atom
-
-```julia
-struct Atom
-    index::Int       # Atom index (1-based)
-    name::String     # Atom name ("CA", "N", etc.)
-    resname::String  # Residue name ("GLY", "ALA", etc.)
-    resid::Int       # Residue number
-    x::Float32       # Initial x coordinate (nm)
-    y::Float32       # Initial y coordinate (nm)
-    z::Float32       # Initial z coordinate (nm)
-end
+src/
+├── MDTools.jl    # 模块入口
+├── xtc.jl        # XTC 轨迹读取
+├── topology.jl   # 拓扑和 GRO 读取
+└── selection.jl  # 原子选择
 ```
-
-### Topology
-
-```julia
-struct Topology
-    natoms::Int
-    atoms::Vector{Atom}
-    title::String
-    box::Vector{Float32}  # Box dimensions [x, y, z]
-    # ... lookup indices
-end
-```
-
-### XTCFrame
-
-```julia
-struct XTCFrame
-    step::Int64           # Frame number (simulation step)
-    time::Float32         # Simulation time (ps)
-    box::Matrix{Float32}  # 3×3 box matrix (nm)
-    natoms::Int32         # Number of atoms
-    precision::Float32    # Coordinate precision
-    coords::Matrix{Float32}  # 3×natoms coordinate matrix (nm)
-end
-```
-
-### Universe
-
-```julia
-struct Universe
-    topology::Topology
-    trajectory::XTCTrajectory
-end
-```
-
-## Utility Functions
-
-```julia
-residue_ids(top)    # Get sorted list of residue IDs
-residue_names(top)  # Get list of residue names
-atom_names(top)     # Get list of atom names
-```
-
-## Technical Details
-
-The XTC format uses:
-- XDR (External Data Representation) for cross-platform binary serialization
-- Lossy coordinate compression with configurable precision
-- Run-length encoding for similar consecutive coordinates
-- Adaptive bit-width encoding based on coordinate ranges
-
-This implementation is based on the GROMACS source code analysis and has been validated against Chemfiles.jl.
 
 ## License
 
